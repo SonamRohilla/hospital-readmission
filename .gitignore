@@ -1,0 +1,8 @@
+*.duckdb
+*.duckdb.wal
+__pycache__/
+.DS_Store
+data/raw/*.csv
+outputs/cohort.csv
+outputs/risk_scores.csv
+.venv/

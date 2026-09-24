@@ -1,0 +1,5 @@
+hba1c_group,patients,readmission_rate_pct
+1. Not tested,57125,9.1
+2. Tested - normal,3741,8.63
+"3. Tested - high, no medication change",3631,7.77
+"4. Tested - high, medication changed",5473,8.64

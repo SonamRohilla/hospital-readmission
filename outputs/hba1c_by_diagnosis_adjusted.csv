@@ -1,0 +1,4 @@
+primary_diagnosis,patients,rate_not_tested_pct,rate_tested_pct,adjusted_odds_ratio,ci95_low,ci95_high,p_value,interaction_p_diabetes_vs_circulatory
+Diabetes,5748,10.17,7.23,0.819,0.666,1.008,0.0592,0.0128
+Circulatory,21383,9.54,10.2,1.049,0.933,1.178,0.4234,0.0128
+Respiratory,9486,7.71,5.53,0.756,0.607,0.942,0.0128,0.0128

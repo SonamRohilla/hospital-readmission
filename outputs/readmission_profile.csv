@@ -1,0 +1,43 @@
+dimension,category,patients,readmitted,readmission_rate_pct
+Admission source,Emergency room,37258,3446,9.25
+Admission source,Other / unknown,5083,452,8.89
+Admission source,Referral,22789,1971,8.65
+Admission source,Transfer,4840,408,8.43
+Age group,[0-10),153,3,1.96
+Age group,[10-20),534,26,4.87
+Age group,[20-30),1121,83,7.4
+Age group,[30-40),2692,188,6.98
+Age group,[40-50),6828,506,7.41
+Age group,[50-60),12349,879,7.12
+Age group,[60-70),15683,1412,9.0
+Age group,[70-80),17748,1817,10.24
+Age group,[80-90),11102,1195,10.76
+Age group,[90-100),1760,168,9.55
+Discharged to,Care facility (SNF / rehab / other),12065,1850,15.33
+Discharged to,Home,44315,3078,6.95
+Discharged to,Home with health service,8362,796,9.52
+Discharged to,Left against medical advice,409,39,9.54
+Discharged to,Other / unknown,3280,302,9.21
+Discharged to,Other hospital,1539,212,13.78
+Emergency visits in prior year,0,64870,5664,8.73
+Emergency visits in prior year,1,3882,437,11.26
+Emergency visits in prior year,2+,1218,176,14.45
+HbA1c test,Not tested,57125,5199,9.1
+HbA1c test,Tested,12845,1078,8.39
+Inpatient stays in prior year,0,61779,5015,8.12
+Inpatient stays in prior year,1,5794,747,12.89
+Inpatient stays in prior year,2,1501,278,18.52
+Inpatient stays in prior year,3+,896,237,26.45
+Length of stay,1-2 days,22646,1618,7.14
+Length of stay,3-4 days,21910,1857,8.48
+Length of stay,5-7 days,15649,1650,10.54
+Length of stay,8-14 days,9765,1152,11.8
+Primary diagnosis,Circulatory,21383,2067,9.67
+Primary diagnosis,Diabetes,5748,524,9.12
+Primary diagnosis,Digestive,6487,520,8.02
+Primary diagnosis,Genitourinary,3440,309,8.98
+Primary diagnosis,Injury,4692,506,10.78
+Primary diagnosis,Musculoskeletal,4064,341,8.39
+Primary diagnosis,Neoplasms,2538,230,9.06
+Primary diagnosis,Other,12122,1087,8.97
+Primary diagnosis,Respiratory,9486,691,7.28

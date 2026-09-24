@@ -1,0 +1,239 @@
+<title>Readmission Watch</title>
+<meta name="description" content="30-day hospital readmission analysis on 101,766 real diabetic patient encounters from 130 US hospitals. SQL, Python, logistic regression.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f3f6f7; --surface:#ffffff; --surface-2:#e7eef0; --ink:#132026; --muted:#566771; --line:#d3dee2;
+  --accent:#0e7a6b; --good:#1e8e4f; --warn:#b7791f; --bad:#c2410c; --neutral:#8b989d;
+  --display:"Bricolage Grotesque","Helvetica Neue",Arial,sans-serif;
+  --body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0e1518; --surface:#152025; --surface-2:#1b2a30; --ink:#e2ebee; --muted:#93a4ab; --line:#27373d;
+    --accent:#3cc2ab; --good:#4cc47f; --warn:#e0a445; --bad:#f07a4a; --neutral:#7c8b90;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0e1518; --surface:#152025; --surface-2:#1b2a30; --ink:#e2ebee; --muted:#93a4ab; --line:#27373d;
+  --accent:#3cc2ab; --good:#4cc47f; --warn:#e0a445; --bad:#f07a4a; --neutral:#7c8b90;
+}
+*{box-sizing:border-box}
+body{background:var(--bg); color:var(--ink); font:15px/1.6 var(--body); margin:0}
+.wrap{max-width:1080px; margin:0 auto; padding-inline:20px; padding-block:40px 64px; display:flex; flex-direction:column; gap:56px}
+h1,h2,h3{font-family:var(--display); text-wrap:balance; margin:0; line-height:1.15}
+h1{font-size:clamp(2rem,5vw,3rem); font-weight:700; letter-spacing:-.02em}
+h2{font-size:1.6rem; font-weight:700; letter-spacing:-.01em}
+h3{font-size:1.05rem; font-weight:500}
+p{margin:0; max-width:70ch}
+a{color:var(--accent)}
+a:focus-visible,select:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.eyebrow{font:500 .72rem/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--accent)}
+.muted{color:var(--muted)}
+.num{font-family:var(--mono); font-variant-numeric:tabular-nums}
+header{display:grid; grid-template-columns:1fr auto; gap:28px 40px; align-items:end}
+.intro{display:flex; flex-direction:column; gap:14px}
+.byline{display:flex; flex-wrap:wrap; gap:8px 18px; font-size:.9rem; color:var(--muted)}
+.byline strong{color:var(--ink)}
+.stack{display:flex; flex-wrap:wrap; gap:6px}
+.chip{font:500 .72rem/1 var(--mono); padding:6px 8px; border:1px solid var(--line); border-radius:4px; color:var(--muted); background:var(--surface)}
+
+/* a discharge-summary card: the headline numbers in the form a ward would print them */
+.summary{background:var(--surface); width:310px; max-width:100%; border:1px solid var(--line); border-top:6px solid var(--accent); border-radius:4px; padding:16px 18px 18px; font:13px/1.7 var(--mono)}
+.summary .s-head{display:flex; justify-content:space-between; font-weight:500; letter-spacing:.06em; font-size:11px; color:var(--muted); border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:8px}
+.summary .row{display:flex; justify-content:space-between; gap:12px}
+.summary .row b{font-weight:500}
+.summary .flag{color:var(--bad)}
+.summary .field{font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-top:8px}
+
+section{display:flex; flex-direction:column; gap:20px}
+.sec-head{display:flex; flex-direction:column; gap:8px; border-top:1px solid var(--line); padding-top:22px}
+.grid-2{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px}
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:18px; display:flex; flex-direction:column; gap:12px; min-width:0}
+.cap{font-size:.85rem; color:var(--muted)}
+.chart-box{position:relative; height:270px}
+.findings{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px}
+.finding .big{font:600 1.9rem/1 var(--display); color:var(--accent); font-variant-numeric:tabular-nums}
+.tbl-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:6px; background:var(--surface)}
+table{border-collapse:collapse; width:100%; font-size:.88rem}
+th,td{padding:9px 12px; text-align:left; border-bottom:1px solid var(--line)}
+th{font:500 .7rem/1.2 var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); background:var(--surface-2); white-space:nowrap}
+td.r,th.r{text-align:right}
+tbody tr:last-child td{border-bottom:0}
+.funnel{display:flex; flex-direction:column; gap:8px}
+.funnel .f-row{display:grid; grid-template-columns:minmax(0,1fr) 90px; gap:4px 12px; align-items:center}
+.funnel .f-lab{grid-column:1 / -1; font-size:.85rem}
+.funnel .f-bar{height:14px; background:var(--accent); border-radius:3px}
+.controls{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
+select{font:inherit; font-size:.9rem; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:4px; padding:7px 10px}
+ol.steps{margin:0; padding-left:1.2em; display:flex; flex-direction:column; gap:8px; max-width:74ch}
+code{font-family:var(--mono); font-size:.85em; background:var(--surface-2); padding:1px 5px; border-radius:3px}
+footer{border-top:1px solid var(--line); padding-top:20px; font-size:.85rem; color:var(--muted); display:flex; flex-direction:column; gap:6px}
+@media (max-width:820px){ header,.grid-2,.findings{grid-template-columns:1fr} .summary{width:100%} }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="intro">
+    <span class="eyebrow">Portfolio case study · Healthcare analytics</span>
+    <h1>Which diabetic patients come back to hospital within 30 days?</h1>
+    <p class="muted">An analysis of 101,766 real hospital stays of diabetic patients in 130 US hospitals (1999–2008), from the UCI Machine Learning Repository. It covers data quality, readmission drivers, a risk model the care team could use at discharge, and a re-test of a result from the original research paper.</p>
+    <div class="byline"><span><strong>Sonam Rohilla</strong></span><span>Data analyst · Magdeburg, Germany</span><a href="https://github.com/sonamrohilla/hospital-readmission">Code on GitHub</a><a href="https://www.linkedin.com/in/sonam-rohilla-09418723">LinkedIn</a></div>
+    <div class="stack"><span class="chip">SQL</span><span class="chip">DuckDB</span><span class="chip">Python</span><span class="chip">scikit-learn</span><span class="chip">statsmodels</span><span class="chip">Logistic regression</span></div>
+  </div>
+  <div class="summary" aria-label="Key figures">
+    <div class="s-head"><span>READMISSION SUMMARY</span><span>30-DAY</span></div>
+    <div class="field">Cohort</div>
+    <div class="row"><span>Patients analysed</span><b class="num" id="s-pat"></b></div>
+    <div class="row"><span>Readmitted &lt;30 days</span><b class="num" id="s-rate"></b></div>
+    <div class="row"><span>Avg length of stay</span><b class="num" id="s-los"></b></div>
+    <div class="field">Risk model</div>
+    <div class="row"><span>AUC (test set)</span><b class="num" id="s-auc"></b></div>
+    <div class="row"><span>Top 20% catch</span><b class="num flag" id="s-cap"></b></div>
+    <div class="field">Care quality</div>
+    <div class="row"><span>HbA1c tested</span><b class="num flag" id="s-hba"></b></div>
+  </div>
+</header>
+
+<section aria-labelledby="h-find">
+  <div class="sec-head"><span class="eyebrow">Summary for stakeholders</span><h2 id="h-find">Three findings</h2></div>
+  <div class="findings">
+    <div class="panel finding"><span class="big" id="f1"></span><p><strong>readmission rate for patients with 3+ hospital stays in the year before</strong>, compared to <span id="f1b"></span> for patients with none. Past use of the hospital is the strongest single signal.</p></div>
+    <div class="panel finding"><span class="big" id="f2"></span><p><strong>of all readmissions are found by following up only the 20% highest-risk patients</strong> from the model. That's <span id="f2b"></span> more than calling patients at random.</p></div>
+    <div class="panel finding"><span class="big" id="f3"></span><p><strong>of patients got an HbA1c test.</strong> Where diabetes was the main diagnosis, tested patients were readmitted less often (<span id="f3b"></span>). This is an association in observational data, not proof of cause.</p></div>
+  </div>
+</section>
+
+<section aria-labelledby="h-drivers">
+  <div class="sec-head"><span class="eyebrow">Readmission drivers</span><h2 id="h-drivers">Who comes back?</h2>
+    <p class="muted">The 30-day readmission rate for each patient group. The dashed line is the average for all patients. Groups with fewer than 100 patients are hidden.</p></div>
+  <div class="controls"><label for="dim" class="muted">Show by</label><select id="dim"></select></div>
+  <div class="panel"><div class="chart-box"><canvas id="c-prof" aria-label="Readmission rate by group"></canvas></div><p class="cap" id="prof-cap"></p></div>
+</section>
+
+<section aria-labelledby="h-model">
+  <div class="sec-head"><span class="eyebrow">Risk model</span><h2 id="h-model">Can we flag high-risk patients at discharge?</h2>
+    <p class="muted">A logistic regression on 20 variables that are known at discharge, trained on 75% of patients and tested on the other 25%. I compared it with a simple score adapted from the LACE index (length of stay, acuity, comorbidity, emergency visits), which clinics already use.</p></div>
+  <div class="grid-2">
+    <div class="panel"><h3>Actual readmission rate by predicted risk decile</h3><div class="chart-box"><canvas id="c-dec" aria-label="Readmission rate by risk decile"></canvas></div><p class="cap">Test set, <span id="dec-n"></span> patients. Decile 10 = the 10% the model rates as highest risk.</p></div>
+    <div class="panel"><h3>Model vs simple rules</h3>
+      <div class="tbl-wrap"><table><thead><tr><th>Method</th><th class="r">AUC</th><th class="r">Readmissions caught (top 20%)</th></tr></thead><tbody id="mod-body"></tbody></table></div>
+      <p class="cap">AUC 0.5 = random guessing, 1.0 = perfect. Published models on this dataset usually reach 0.60–0.70. Readmission depends on many things that happen after discharge and aren't in hospital records.</p>
+      <p><strong>Recommendation:</strong> use the model to pick the top 20% of patients for a follow-up call or early clinic visit. The simple LACE-style score is weaker here, because this data has no full comorbidity index.</p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-hba">
+  <div class="sec-head"><span class="eyebrow">Re-testing a published finding</span><h2 id="h-hba">Is HbA1c testing linked to fewer readmissions?</h2>
+    <p class="muted">The original paper (Strack et al., 2014) reported that measuring HbA1c was linked to lower readmission, and that the effect depends on the main diagnosis. I re-tested this on the cleaned cohort with logistic regression, adjusting for age, length of stay, prior visits, number of diagnoses, admission source and discharge destination.</p></div>
+  <div class="tbl-wrap"><table><thead><tr><th>Main diagnosis</th><th class="r">Patients</th><th class="r">Not tested</th><th class="r">Tested</th><th class="r">Adjusted odds ratio [95% CI]</th><th class="r">p-value</th></tr></thead><tbody id="hba-body"></tbody></table></div>
+  <p id="hba-note"></p>
+</section>
+
+<section aria-labelledby="h-dq">
+  <div class="sec-head"><span class="eyebrow">Data quality</span><h2 id="h-dq">What was wrong with the data, and what I did about it</h2></div>
+  <div style="display:flex;flex-direction:column;gap:20px">
+    <div class="panel"><h3>From 101,766 stays to the analysis cohort</h3><div class="funnel" id="funnel"></div>
+      <p class="cap">Keeping one stay per patient avoids counting the same person many times. Patients who died or went to hospice can't be readmitted, so they are removed.</p></div>
+    <div class="panel"><h3>Checks on the raw data</h3><div class="tbl-wrap"><table><thead><tr><th>Check</th><th class="r">Rows</th><th>Handling</th></tr></thead><tbody id="dq-body"></tbody></table></div></div>
+  </div>
+</section>
+
+<section aria-labelledby="h-how">
+  <div class="sec-head"><span class="eyebrow">Method</span><h2 id="h-how">How it is built</h2></div>
+  <ol class="steps">
+    <li><strong>Data:</strong> the UCI "Diabetes 130-US Hospitals 1999–2008" dataset: 101,766 encounters, 50 columns, plus 3 lookup tables for admission type, admission source and discharge destination.</li>
+    <li><strong>SQL (DuckDB):</strong> <code>00_data_quality_checks</code> → <code>01_staging</code> (joins, ICD-9 diagnosis groups, cohort) → <code>02_readmission_profile</code> → <code>03_risk_score</code> → <code>04_hba1c_analysis</code>.</li>
+    <li><strong>Python:</strong> scikit-learn logistic regression with a train/test split; statsmodels for adjusted odds ratios, confidence intervals and an interaction test.</li>
+    <li><strong>Limits:</strong> US data from 1999–2008; readmissions to other hospitals are not recorded; the HbA1c result is an association, not a causal effect.</li>
+  </ol>
+</section>
+
+<footer><span>Data: Strack B. et al. (2014), "Impact of HbA1c Measurement on Hospital Readmission Rates", BioMed Research International. UCI Machine Learning Repository, CC BY 4.0. De-identified data.</span><span>Sonam Rohilla · <a href="https://github.com/sonamrohilla/hospital-readmission">Source code and SQL</a></span></footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const D = {"kpi": {"patients": 69970.0, "readmitted_30d": 6277.0, "readmission_rate_pct": 8.97, "avg_los_days": 4.27, "hba1c_tested_pct": 18.4}, "profile": [{"dimension": "Admission source", "category": "Emergency room", "patients": 37258, "readmitted": 3446, "readmission_rate_pct": 9.25}, {"dimension": "Admission source", "category": "Other / unknown", "patients": 5083, "readmitted": 452, "readmission_rate_pct": 8.89}, {"dimension": "Admission source", "category": "Referral", "patients": 22789, "readmitted": 1971, "readmission_rate_pct": 8.65}, {"dimension": "Admission source", "category": "Transfer", "patients": 4840, "readmitted": 408, "readmission_rate_pct": 8.43}, {"dimension": "Age group", "category": "[0-10)", "patients": 153, "readmitted": 3, "readmission_rate_pct": 1.96}, {"dimension": "Age group", "category": "[10-20)", "patients": 534, "readmitted": 26, "readmission_rate_pct": 4.87}, {"dimension": "Age group", "category": "[20-30)", "patients": 1121, "readmitted": 83, "readmission_rate_pct": 7.4}, {"dimension": "Age group", "category": "[30-40)", "patients": 2692, "readmitted": 188, "readmission_rate_pct": 6.98}, {"dimension": "Age group", "category": "[40-50)", "patients": 6828, "readmitted": 506, "readmission_rate_pct": 7.41}, {"dimension": "Age group", "category": "[50-60)", "patients": 12349, "readmitted": 879, "readmission_rate_pct": 7.12}, {"dimension": "Age group", "category": "[60-70)", "patients": 15683, "readmitted": 1412, "readmission_rate_pct": 9.0}, {"dimension": "Age group", "category": "[70-80)", "patients": 17748, "readmitted": 1817, "readmission_rate_pct": 10.24}, {"dimension": "Age group", "category": "[80-90)", "patients": 11102, "readmitted": 1195, "readmission_rate_pct": 10.76}, {"dimension": "Age group", "category": "[90-100)", "patients": 1760, "readmitted": 168, "readmission_rate_pct": 9.55}, {"dimension": "Discharged to", "category": "Care facility (SNF / rehab / other)", "patients": 12065, "readmitted": 1850, "readmission_rate_pct": 15.33}, {"dimension": "Discharged to", "category": "Home", "patients": 44315, "readmitted": 3078, "readmission_rate_pct": 6.95}, {"dimension": "Discharged to", "category": "Home with health service", "patients": 8362, "readmitted": 796, "readmission_rate_pct": 9.52}, {"dimension": "Discharged to", "category": "Left against medical advice", "patients": 409, "readmitted": 39, "readmission_rate_pct": 9.54}, {"dimension": "Discharged to", "category": "Other / unknown", "patients": 3280, "readmitted": 302, "readmission_rate_pct": 9.21}, {"dimension": "Discharged to", "category": "Other hospital", "patients": 1539, "readmitted": 212, "readmission_rate_pct": 13.78}, {"dimension": "Emergency visits in prior year", "category": "0", "patients": 64870, "readmitted": 5664, "readmission_rate_pct": 8.73}, {"dimension": "Emergency visits in prior year", "category": "1", "patients": 3882, "readmitted": 437, "readmission_rate_pct": 11.26}, {"dimension": "Emergency visits in prior year", "category": "2+", "patients": 1218, "readmitted": 176, "readmission_rate_pct": 14.45}, {"dimension": "HbA1c test", "category": "Not tested", "patients": 57125, "readmitted": 5199, "readmission_rate_pct": 9.1}, {"dimension": "HbA1c test", "category": "Tested", "patients": 12845, "readmitted": 1078, "readmission_rate_pct": 8.39}, {"dimension": "Inpatient stays in prior year", "category": "0", "patients": 61779, "readmitted": 5015, "readmission_rate_pct": 8.12}, {"dimension": "Inpatient stays in prior year", "category": "1", "patients": 5794, "readmitted": 747, "readmission_rate_pct": 12.89}, {"dimension": "Inpatient stays in prior year", "category": "2", "patients": 1501, "readmitted": 278, "readmission_rate_pct": 18.52}, {"dimension": "Inpatient stays in prior year", "category": "3+", "patients": 896, "readmitted": 237, "readmission_rate_pct": 26.45}, {"dimension": "Length of stay", "category": "1-2 days", "patients": 22646, "readmitted": 1618, "readmission_rate_pct": 7.14}, {"dimension": "Length of stay", "category": "3-4 days", "patients": 21910, "readmitted": 1857, "readmission_rate_pct": 8.48}, {"dimension": "Length of stay", "category": "5-7 days", "patients": 15649, "readmitted": 1650, "readmission_rate_pct": 10.54}, {"dimension": "Length of stay", "category": "8-14 days", "patients": 9765, "readmitted": 1152, "readmission_rate_pct": 11.8}, {"dimension": "Primary diagnosis", "category": "Circulatory", "patients": 21383, "readmitted": 2067, "readmission_rate_pct": 9.67}, {"dimension": "Primary diagnosis", "category": "Diabetes", "patients": 5748, "readmitted": 524, "readmission_rate_pct": 9.12}, {"dimension": "Primary diagnosis", "category": "Digestive", "patients": 6487, "readmitted": 520, "readmission_rate_pct": 8.02}, {"dimension": "Primary diagnosis", "category": "Genitourinary", "patients": 3440, "readmitted": 309, "readmission_rate_pct": 8.98}, {"dimension": "Primary diagnosis", "category": "Injury", "patients": 4692, "readmitted": 506, "readmission_rate_pct": 10.78}, {"dimension": "Primary diagnosis", "category": "Musculoskeletal", "patients": 4064, "readmitted": 341, "readmission_rate_pct": 8.39}, {"dimension": "Primary diagnosis", "category": "Neoplasms", "patients": 2538, "readmitted": 230, "readmission_rate_pct": 9.06}, {"dimension": "Primary diagnosis", "category": "Other", "patients": 12122, "readmitted": 1087, "readmission_rate_pct": 8.97}, {"dimension": "Primary diagnosis", "category": "Respiratory", "patients": 9486, "readmitted": 691, "readmission_rate_pct": 7.28}], "models": [{"method": "Logistic regression (all features)", "auc": 0.641, "readmissions_caught_top20_pct": 36.3, "readmission_rate_in_top20_pct": 16.3, "baseline_rate_pct": 8.97}, {"method": "LACE-style score (SQL)", "auc": 0.553, "readmissions_caught_top20_pct": 24.3, "readmission_rate_in_top20_pct": 10.9, "baseline_rate_pct": 8.97}, {"method": "Prior inpatient stays only", "auc": 0.544, "readmissions_caught_top20_pct": 27.3, "readmission_rate_in_top20_pct": 12.3, "baseline_rate_pct": 8.97}], "deciles": [{"decile": 1, "patients": 1750, "readmission_rate_pct": 3.94}, {"decile": 2, "patients": 1749, "readmission_rate_pct": 5.2}, {"decile": 3, "patients": 1749, "readmission_rate_pct": 6.17}, {"decile": 4, "patients": 1749, "readmission_rate_pct": 5.26}, {"decile": 5, "patients": 1750, "readmission_rate_pct": 7.54}, {"decile": 6, "patients": 1749, "readmission_rate_pct": 8.29}, {"decile": 7, "patients": 1749, "readmission_rate_pct": 9.72}, {"decile": 8, "patients": 1749, "readmission_rate_pct": 10.98}, {"decile": 9, "patients": 1749, "readmission_rate_pct": 15.32}, {"decile": 10, "patients": 1750, "readmission_rate_pct": 17.26}], "hba": [{"primary_diagnosis": "Diabetes", "patients": 5748, "rate_not_tested_pct": 10.17, "rate_tested_pct": 7.23, "adjusted_odds_ratio": 0.819, "ci95_low": 0.666, "ci95_high": 1.008, "p_value": 0.0592, "interaction_p_diabetes_vs_circulatory": 0.0128}, {"primary_diagnosis": "Circulatory", "patients": 21383, "rate_not_tested_pct": 9.54, "rate_tested_pct": 10.2, "adjusted_odds_ratio": 1.049, "ci95_low": 0.933, "ci95_high": 1.178, "p_value": 0.4234, "interaction_p_diabetes_vs_circulatory": 0.0128}, {"primary_diagnosis": "Respiratory", "patients": 9486, "rate_not_tested_pct": 7.71, "rate_tested_pct": 5.53, "adjusted_odds_ratio": 0.756, "ci95_low": 0.607, "ci95_high": 0.942, "p_value": 0.0128, "interaction_p_diabetes_vs_circulatory": 0.0128}], "hbaAll": {"odds_ratio": 0.952, "ci95_low": 0.887, "ci95_high": 1.022, "p_value": 0.1746}, "funnel": [{"step": 1, "description": "All hospital encounters", "encounters": 101766}, {"step": 2, "description": "First encounter per patient", "encounters": 71518}, {"step": 3, "description": "Excluding died / hospice and invalid gender", "encounters": 69970}], "dq": [{"check_id": 1, "check_name": "Duplicate encounter_id", "affected_rows": 0, "handling": "None found - encounter_id is a valid primary key"}, {"check_id": 2, "check_name": "Race recorded as '?'", "affected_rows": 2273, "handling": "Set to NULL, reported as Unknown"}, {"check_id": 3, "check_name": "Weight recorded as '?'", "affected_rows": 98569, "handling": "Column dropped - 97% missing, not usable"}, {"check_id": 4, "check_name": "Payer code recorded as '?'", "affected_rows": 40256, "handling": "Column dropped - 40% missing and not needed for the question"}, {"check_id": 5, "check_name": "Medical specialty recorded as '?'", "affected_rows": 49949, "handling": "Kept as 'Unknown' category (49% missing)"}, {"check_id": 6, "check_name": "Primary diagnosis (diag_1) recorded as '?'", "affected_rows": 21, "handling": "Grouped as 'Missing'"}, {"check_id": 7, "check_name": "Gender 'Unknown/Invalid'", "affected_rows": 3, "handling": "Excluded from the analysis cohort"}, {"check_id": 8, "check_name": "Repeat encounters of the same patient", "affected_rows": 30248, "handling": "Keep first encounter per patient so observations are independent"}, {"check_id": 9, "check_name": "Discharged as died or to hospice (cannot be readmitted)", "affected_rows": 2423, "handling": "Excluded from the analysis cohort"}, {"check_id": 10, "check_name": "Admission type unknown (NULL / Not Available / Not Mapped)", "affected_rows": 10396, "handling": "Grouped as 'Unknown'"}, {"check_id": 11, "check_name": "Admission source unknown (NULL / Not Available / Not Mapped / Invalid)", "affected_rows": 7067, "handling": "Grouped as 'Unknown'"}, {"check_id": 12, "check_name": "Discharge disposition unknown (NULL / Not Mapped / Invalid)", "affected_rows": 4680, "handling": "Grouped as 'Unknown'"}, {"check_id": 13, "check_name": "Codes with no match in lookup tables (orphan keys)", "affected_rows": 0, "handling": "Checked with LEFT JOINs"}, {"check_id": 14, "check_name": "Lookup: same description used for two admission_source codes", "affected_rows": 1, "handling": "Harmless (both mean Not Available) - mapped to the same group"}, {"check_id": 15, "check_name": "HbA1c test not performed (not an error - a care-quality signal)", "affected_rows": 84748, "handling": "Kept - analysed in 04_hba1c_analysis.sql"}]};
+const $ = id => document.getElementById(id);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmt = n => Number(n).toLocaleString("en-US");
+const K = D.kpi, M = D.models[0], P = D.profile;
+$("s-pat").textContent = fmt(K.patients);
+$("s-rate").textContent = K.readmission_rate_pct.toFixed(1) + "%";
+$("s-los").textContent = K.avg_los_days.toFixed(1) + " days";
+$("s-auc").textContent = M.auc.toFixed(2);
+$("s-cap").textContent = M.readmissions_caught_top20_pct.toFixed(0) + "% of cases";
+$("s-hba").textContent = K.hba1c_tested_pct.toFixed(0) + "% only";
+const pi = c => P.find(r => r.dimension === "Inpatient stays in prior year" && r.category === c);
+$("f1").textContent = pi("3+").readmission_rate_pct.toFixed(1) + "%";
+$("f1b").textContent = pi("0").readmission_rate_pct.toFixed(1) + "%";
+$("f2").textContent = M.readmissions_caught_top20_pct.toFixed(0) + "%";
+$("f2b").textContent = (M.readmissions_caught_top20_pct / 20).toFixed(1) + "×";
+$("f3").textContent = K.hba1c_tested_pct.toFixed(0) + "%";
+const dia = D.hba.find(r => r.primary_diagnosis === "Diabetes");
+$("f3b").textContent = `${dia.rate_tested_pct.toFixed(1)}% vs ${dia.rate_not_tested_pct.toFixed(1)}%`;
+
+// model table
+$("mod-body").innerHTML = D.models.map(m => `<tr><td>${m.method}</td><td class="r num">${m.auc.toFixed(2)}</td><td class="r num">${m.readmissions_caught_top20_pct.toFixed(1)}%</td></tr>`).join("");
+$("dec-n").textContent = fmt(D.deciles.reduce((a, d) => a + d.patients, 0));
+
+// HbA1c table
+$("hba-body").innerHTML = D.hba.map(r => `<tr><td>${r.primary_diagnosis}</td><td class="r num">${fmt(r.patients)}</td><td class="r num">${r.rate_not_tested_pct.toFixed(1)}%</td><td class="r num">${r.rate_tested_pct.toFixed(1)}%</td><td class="r num">${r.adjusted_odds_ratio.toFixed(2)} [${r.ci95_low.toFixed(2)}–${r.ci95_high.toFixed(2)}]</td><td class="r num">${r.p_value.toFixed(3)}</td></tr>`).join("")
+  + `<tr><td><strong>All patients</strong></td><td class="r num">${fmt(K.patients)}</td><td class="r num" colspan="2"></td><td class="r num">${D.hbaAll.odds_ratio.toFixed(2)} [${D.hbaAll.ci95_low.toFixed(2)}–${D.hbaAll.ci95_high.toFixed(2)}]</td><td class="r num">${D.hbaAll.p_value.toFixed(3)}</td></tr>`;
+$("hba-note").innerHTML = `<strong>Result:</strong> across all patients, testing is not significantly linked to readmission after adjustment (odds ratio ${D.hbaAll.odds_ratio.toFixed(2)}). The link does depend on the main diagnosis: the difference between diabetes and circulatory patients is significant (interaction p = ${dia.interaction_p_diabetes_vs_circulatory.toFixed(3)}), which matches the direction reported in the paper. <strong>Recommendation:</strong> make HbA1c testing routine for patients admitted mainly for diabetes (only ${K.hba1c_tested_pct.toFixed(0)}% of all patients were tested), and test the effect properly in a pilot.`;
+
+// funnel
+const f0 = D.funnel[0].encounters;
+$("funnel").innerHTML = D.funnel.map(f => `<div class="f-row"><span class="f-lab">${f.description}</span><div><div class="f-bar" style="width:${100 * f.encounters / f0}%"></div></div><span class="num r">${fmt(f.encounters)}</span></div>`).join("");
+// dq
+$("dq-body").innerHTML = D.dq.filter(d => d.affected_rows > 0).map(d => `<tr><td>${d.check_name}</td><td class="r num">${fmt(d.affected_rows)}</td><td class="muted">${d.handling}</td></tr>`).join("");
+
+// profile selector
+const dims = ["Inpatient stays in prior year", "Discharged to", "Emergency visits in prior year", "Length of stay", "Age group", "Primary diagnosis", "Admission source", "HbA1c test"];
+$("dim").innerHTML = dims.map(d => `<option>${d}</option>`).join("");
+const charts = {};
+function profChart() {
+  if (!window.Chart) return;
+  charts.prof && charts.prof.destroy();
+  const d = $("dim").value;
+  let rows = P.filter(r => r.dimension === d);
+  if (!["Age group", "Inpatient stays in prior year", "Emergency visits in prior year", "Length of stay"].includes(d)) rows = rows.sort((a, b) => b.readmission_rate_pct - a.readmission_rate_pct);
+  const base = K.readmission_rate_pct, line = css("--line");
+  charts.prof = new Chart($("c-prof"), {
+    data: { labels: rows.map(r => r.category), datasets: [
+      { type: "bar", label: "Readmitted within 30 days", data: rows.map(r => r.readmission_rate_pct),
+        backgroundColor: rows.map(r => r.readmission_rate_pct > base * 1.15 ? css("--bad") : r.readmission_rate_pct < base * 0.85 ? css("--good") : css("--neutral")), borderRadius: 3, maxBarThickness: 60 },
+      { type: "line", label: "Average", data: rows.map(() => base), borderColor: css("--ink"), borderDash: [5, 4], borderWidth: 1, pointRadius: 0 } ] },
+    options: { maintainAspectRatio: false, plugins: { legend: { display: false },
+      tooltip: { callbacks: { label: c => c.datasetIndex ? `Average ${base}%` : `${c.raw.toFixed(1)}% of ${fmt(rows[c.dataIndex].patients)} patients` } } },
+      scales: { y: { beginAtZero: true, ticks: { callback: v => v + "%" }, grid: { color: line } }, x: { grid: { display: false } } } } });
+  const hi = rows.reduce((a, b) => a.readmission_rate_pct > b.readmission_rate_pct ? a : b);
+  $("prof-cap").textContent = `Highest: ${hi.category} at ${hi.readmission_rate_pct.toFixed(1)}% (${fmt(hi.patients)} patients) vs ${base.toFixed(1)}% on average.`;
+}
+function decChart() {
+  if (!window.Chart) return;
+  charts.dec && charts.dec.destroy();
+  const avg = 100 * D.deciles.reduce((a, d) => a + d.readmission_rate_pct * d.patients / 100, 0) / D.deciles.reduce((a, d) => a + d.patients, 0);
+  charts.dec = new Chart($("c-dec"), { type: "bar",
+    data: { labels: D.deciles.map(d => d.decile), datasets: [{ data: D.deciles.map(d => d.readmission_rate_pct),
+      backgroundColor: D.deciles.map(d => d.decile >= 9 ? css("--bad") : css("--neutral")), borderRadius: 3 }] },
+    options: { maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.raw.toFixed(1) + "% readmitted" } } },
+      scales: { y: { beginAtZero: true, ticks: { callback: v => v + "%" }, grid: { color: css("--line") } }, x: { title: { display: true, text: "Predicted risk decile" }, grid: { display: false } } } } });
+}
+function draw() {
+  if (!window.Chart) return;
+  Chart.defaults.font.family = css("--body"); Chart.defaults.color = css("--muted"); Chart.defaults.borderColor = css("--line");
+  profChart(); decChart();
+}
+$("dim").addEventListener("change", profChart);
+draw();
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+</script>

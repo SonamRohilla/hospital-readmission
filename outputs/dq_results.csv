@@ -1,0 +1,16 @@
+check_id,check_name,affected_rows,handling
+1,Duplicate encounter_id,0,None found - encounter_id is a valid primary key
+2,Race recorded as '?',2273,"Set to NULL, reported as Unknown"
+3,Weight recorded as '?',98569,"Column dropped - 97% missing, not usable"
+4,Payer code recorded as '?',40256,Column dropped - 40% missing and not needed for the question
+5,Medical specialty recorded as '?',49949,Kept as 'Unknown' category (49% missing)
+6,Primary diagnosis (diag_1) recorded as '?',21,Grouped as 'Missing'
+7,Gender 'Unknown/Invalid',3,Excluded from the analysis cohort
+8,Repeat encounters of the same patient,30248,Keep first encounter per patient so observations are independent
+9,Discharged as died or to hospice (cannot be readmitted),2423,Excluded from the analysis cohort
+10,Admission type unknown (NULL / Not Available / Not Mapped),10396,Grouped as 'Unknown'
+11,Admission source unknown (NULL / Not Available / Not Mapped / Invalid),7067,Grouped as 'Unknown'
+12,Discharge disposition unknown (NULL / Not Mapped / Invalid),4680,Grouped as 'Unknown'
+13,Codes with no match in lookup tables (orphan keys),0,Checked with LEFT JOINs
+14,Lookup: same description used for two admission_source codes,1,Harmless (both mean Not Available) - mapped to the same group
+15,HbA1c test not performed (not an error - a care-quality signal),84748,Kept - analysed in 04_hba1c_analysis.sql

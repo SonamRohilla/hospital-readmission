@@ -1,0 +1,4 @@
+risk_band,patients,share_of_patients_pct,readmitted,readmission_rate_pct
+Low (0-4),8641,12.3,541,6.26
+Moderate (5-9),35885,51.3,2986,8.32
+High (10+),25444,36.4,2750,10.81

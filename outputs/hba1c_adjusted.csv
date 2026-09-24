@@ -1,0 +1,4 @@
+group_vs_not_tested,odds_ratio,ci95_low,ci95_high,p_value
+"Tested - high, med changed",0.967,0.874,1.071,0.5214
+"Tested - high, no change",0.93,0.819,1.056,0.2655
+Tested - normal,0.95,0.843,1.07,0.3989

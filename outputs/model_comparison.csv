@@ -1,0 +1,4 @@
+method,auc,readmissions_caught_top20_pct,readmission_rate_in_top20_pct,baseline_rate_pct
+Logistic regression (all features),0.641,36.3,16.3,8.97
+LACE-style score (SQL),0.553,24.3,10.9,8.97
+Prior inpatient stays only,0.544,27.3,12.3,8.97

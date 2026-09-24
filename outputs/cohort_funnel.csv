@@ -1,0 +1,4 @@
+step,description,encounters
+1,All hospital encounters,101766
+2,First encounter per patient,71518
+3,Excluding died / hospice and invalid gender,69970

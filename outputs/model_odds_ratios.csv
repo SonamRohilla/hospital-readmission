@@ -1,0 +1,54 @@
+feature,odds_ratio
+specialty_grp_Nephrology,1.5532884830332798
+specialty_grp_Orthopedics,1.4401865504423472
+specialty_grp_Family/GeneralPractice,1.3645384776809613
+specialty_grp_InternalMedicine,1.3144058735348016
+specialty_grp_Unknown,1.2628462674928738
+prior_inpatient,1.244611767502038
+on_diabetes_medication_True,1.2347084174028589
+specialty_grp_Other,1.2327572885497255
+specialty_grp_Surgery-General,1.173621062361531
+los_days,1.0742150347089205
+race_Asian,1.072270946819069
+prior_emergency,1.0708315363248246
+number_diagnoses,1.062487104079642
+age_mid,1.0589648738140431
+admission_source_group_Referral,1.0578414776750396
+primary_diagnosis_group_Missing,1.046921174955345
+num_lab_procedures,1.0467077934394118
+admission_type_group_Urgent,1.044666561988775
+gender_Male,1.0330051787324326
+admission_source_group_Other / unknown,1.0222239099937778
+admission_type_group_Emergency / trauma,1.0190255457396167
+admission_type_group_Unknown,1.0089866965454133
+specialty_grp_Emergency/Trauma,1.0041217178301498
+specialty_grp_Radiologist,1.0030063560617146
+prior_outpatient,1.0010130414171885
+num_medications,0.9992567540397302
+num_procedures,0.9922561539534254
+race_Caucasian,0.9826838593831512
+medication_changed_True,0.965458241979568
+hba1c_group_Tested - normal,0.9369519267171963
+insulin_Up,0.9318198374497296
+race_Hispanic,0.9306693302287865
+discharge_group_Other hospital,0.9269254438506266
+race_Unknown,0.9184579915651113
+primary_diagnosis_group_Neoplasms,0.9125300448147802
+"hba1c_group_Tested - high, no change",0.9063345413123987
+primary_diagnosis_group_Diabetes,0.8950411404525371
+primary_diagnosis_group_Genitourinary,0.8797881364814698
+insulin_Steady,0.877063164261946
+primary_diagnosis_group_Digestive,0.8640143943175477
+insulin_No,0.8616868266978149
+"hba1c_group_Tested - high, med changed",0.8607104776042959
+race_Other,0.8505629176683691
+primary_diagnosis_group_Injury,0.8465234322403181
+admission_source_group_Transfer,0.822424919426676
+specialty_grp_Orthopedics-Reconstructive,0.8000186896294645
+primary_diagnosis_group_Other,0.7951363113025444
+primary_diagnosis_group_Respiratory,0.7177792070728825
+primary_diagnosis_group_Musculoskeletal,0.7135219536237507
+discharge_group_Left against medical advice,0.6805822009946537
+discharge_group_Other / unknown,0.6322810585663364
+discharge_group_Home with health service,0.583475318895293
+discharge_group_Home,0.4487763644669436
